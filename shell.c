@@ -19,7 +19,7 @@ struct sigaction stp,stp1,stp2;
 int stopped,sig,pid;
 int fd[2];
 
-pid_t p=0;
+pid_t p=0,predP=0;
 void signalToParent (int sigName,siginfo_t *s,void *m);
 void signalToChild (int a);
 void setSignalsToParent ();
@@ -28,7 +28,7 @@ void parentDoIt (int in,int out){
  		printf("В фоновом режиме запущен процесс pid=%d\n",p);
  	} else { //если мы этого не делаем, то init станет родителем? и он уже сделает wait?
  	  	sig=0;//тонко
- 	  	tcsetpgrp(0,p);//а если  группа не успеет создаться?
+ 	  	//а если  группа не успеет создаться?
  	  	stp2.sa_handler=SIG_IGN;
 		stp2.sa_flags=SA_ONESHOT;
 		sigaction(SIGTTOU,&stp2,0);
@@ -67,9 +67,17 @@ void changeFile (char cond,int last, char*file, int flags, int *save) {
 void childDoIt (int i,int ncmds,int *newin,int *newout,int in,int out) {
 	//printf("будем читать в %d\n",in);
 	//printf("будем записывать в %d\n",out);
-	if (setpgid(0,0)==-1) {
+	if (in==STDIN_FILENO && setpgid(0,0)==-1) {
 		fprintf(stderr,"Не удалось сделать подроцесс лидером группы\n");
 	}
+	if (in!=STDIN_FILENO && setpgid(0,predP)==-1) {
+		fprintf(stderr,"Не удалось сделать подроцесс лидером группы\n");
+	}
+	stp2.sa_handler=SIG_IGN;
+	stp2.sa_flags=SA_ONESHOT;
+	sigaction(SIGTTOU,&stp2,0);
+	if (tcsetpgrp(0,getpgid(0))<0)
+			printf("(\n");
 	if (bkgrnd) {
 		stp.sa_handler=SIG_IGN;
 		sigaction(SIGINT,&stp,0);
@@ -139,6 +147,7 @@ int main(int argc, char *argv[])
  	   		if (exceptions(i)) {
  	   			continue;
  	   		}
+ 	   		predP=p;
  	   		p=fork();
  	   		switch (p) {
  	   			case -1: {
