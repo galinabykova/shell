@@ -5,7 +5,7 @@
 extern char *tzname[];
 int main() {
 	//putenv("TZ=America/Los_Angeles");//EST5EDT
-	//putenv("TZ=PST8PDT");//
+	//putenv("TZ=PST8PDT");//PST8PDT Pacific Standart Time, 8 часов на запад от Гринвича, с переводом летнего/зимнего времени из презентации
 	putenv("TZ=US/Pacific");//	
 	time_t now;
 	struct tm *sp;
