@@ -1,0 +1,14 @@
+rm lab3file
+touch lab3rez.txt
+gcc lab3.c -o lab3
+touch lab3file
+chmod 600 lab3file
+echo "user:\n" >lab3rez.txt
+./lab3 >>lab3rez.txt
+echo "tairon:\n" >>lab3rez.txt
+sudo -u tairon ./lab3 >>lab3rez.txt
+chmod u+s ./lab3
+echo "tairon:\n" >>lab3rez.txt
+sudo -u tairon ./lab3 >>lab3rez.txt
+
+
