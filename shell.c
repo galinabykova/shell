@@ -54,14 +54,15 @@ void parentDoIt (int in,int out){
 }
 void changeFile (char cond,int last, char*file, int flags, int *save) {
 	if (cond) { //нужно проверить, имеем ли мы право на ввод или вывод
-		close(last);
 		*save=open(file,flags,0666); //нужно уточнять права?
-		if (save<0) {
+		if (*save<0) {
 			fprintf(stderr,"Не удалось открыть файл %s\n",file);
-	}
-	dup(*save);
+		} else {
+			close(last);
+			dup(*save);
+		}
 	//close(*save);
-}
+	}
 }
 //stderr
 void childDoIt (int i,int ncmds,int *newin,int *newout,int in,int out) {
