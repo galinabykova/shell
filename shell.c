@@ -1,3 +1,5 @@
+//5 лекция Ожидание изменения состояния подпроцесса
+
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <fcntl.h>
