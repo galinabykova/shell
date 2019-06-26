@@ -18,30 +18,32 @@ char *infile, *outfile, *appfile;
 struct command cmds[MAXCMDS];
 char bkgrnd;
 struct sigaction stp,stp1,stp2;
-int stopped,sig,pid;
+int pid;
 int fd[2];
 
 pid_t p=0,predP=0;
-void signalToParent (int sigName,siginfo_t *s,void *m);
+void signalToParent (int sigName);
 void signalToChild (int a);
 void setSignalsToParent ();
 void parentDoIt (int in,int out){
 	if (bkgrnd) {
  		printf("В фоновом режиме запущен процесс pid=%d\n",p);
  	} else { //если мы этого не делаем, то init станет родителем? и он уже сделает wait?
- 	  	sig=0;//тонко
  	  	//а если  группа не успеет создаться?
- 	  	stp2.sa_handler=SIG_IGN;
-		stp2.sa_flags=SA_ONESHOT;
-		sigaction(SIGTTOU,&stp2,0);
- 	  	while (sig!=SIGCHLD || pid!=p) 
- 	  		pause();
- 	  	if (stopped==CLD_STOPPED) {
+
+		siginfo_t si;
+		waitid(P_PID,p,&si,WEXITED|WSTOPPED);
+
+ 	  	if (si.si_code==CLD_STOPPED) {
 			kill(p,SIGCONT);
 		} 
+
+		stp2.sa_handler=SIG_IGN;
+		stp2.sa_flags=SA_ONESHOT;
+		sigaction(SIGTTOU,&stp2,0);
 		if (tcsetpgrp(0,getpgid(0))<0)
 			printf("(\n");
-		if (stopped==CLD_EXITED) {
+		if (si.si_code==CLD_EXITED) {
 			if (in!=STDIN_FILENO) {
 				close(in);
 			}
@@ -79,8 +81,6 @@ void childDoIt (int i,int ncmds,int *newin,int *newout,int in,int out) {
 	stp2.sa_handler=SIG_IGN;
 	stp2.sa_flags=SA_ONESHOT;
 	sigaction(SIGTTOU,&stp2,0);
-	if (tcsetpgrp(0,getpgid(0))<0)
-			printf("(\n");
 	if (bkgrnd) {
 		stp.sa_handler=SIG_IGN;
 		sigaction(SIGINT,&stp,0);
@@ -88,6 +88,8 @@ void childDoIt (int i,int ncmds,int *newin,int *newout,int in,int out) {
 	} else {
 		stp.sa_handler=SIG_DFL;
 		sigaction(SIGINT,&stp,0);
+		if (tcsetpgrp(0,getpgid(0))<0)
+			printf("(\n");
 	}
 //	printf("я %d, ловит %d\n", getpid(),tcgetpgrp(0));//
 	if (in!=STDIN_FILENO) {
@@ -127,6 +129,7 @@ int main(int argc, char *argv[])
     while (1) {    /*until eof  */
 		if (promptline(prompt, line, sizeof(line))<=0) {
 			//printf("Введите \n");
+			//break;
 			continue;
 		}
     	if ((ncmds = parseline(line)) <= 0) {
@@ -170,9 +173,8 @@ int main(int argc, char *argv[])
  	}  /* close while */
  }
  /* PLACE SIGNAL CODE HERE */
-void signalToParent (int sigName,siginfo_t *s,void *m) {
+void signalToParent (int sigName) {
 //	printf("%d\n",sigName);
-	sig=sigName;
 	if (sigName==SIGINT) {
 		//printf("%d\n",p);
 		if (p && !bkgrnd) {
@@ -182,22 +184,13 @@ void signalToParent (int sigName,siginfo_t *s,void *m) {
 		//printf("Обработка\n");
 		return;
 	}
-	if (sigName==SIGCHLD) {
-		stopped=s->si_code;
-		pid=s->si_pid;
-		if (tcgetpgrp(0)!=getpgid(pid) && s->si_code==CLD_EXITED) {
-			printf("Фоновый процесс %d завершён\n",pid);
-		}
-		return;
-	}
 }
 
 void setSignalsToParent () {
-	stp.sa_flags=SA_SIGINFO;
-	stp.sa_sigaction=signalToParent;
+	stp.sa_flags=0;
+	stp.sa_handler=signalToParent;
 	//stp.sa_mask=0;
 	sigaction(SIGINT,&stp,0);//здесь или не здесь?
-	sigaction(SIGCHLD,&stp,0);
 		//sigaction(SIGTTOU,&stp,0);//
 		//sigaction(SIGTTIN,&stp,0);//
 //	sigaction(SIGTSTP,&stp,0);//здесь или не здесь?	
