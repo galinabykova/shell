@@ -15,14 +15,18 @@ void child2 (int d) {
 	char c;
 	while (read(d,&c,1)) {
 		printf("%c",toupper(c));
-		fflush(stdout);
+		//fflush(stdout);
 	}
+	printf("\n");
 	close(d);
 }
 
 int main () {
 	int fd[2];
-	pipe(fd);
+	if (pipe(fd)==-1) {
+		perror("Error\n");
+		return 0;
+	}
 	int p=fork();
 	switch (p) {
 		case -1:
