@@ -11,7 +11,7 @@ void obr (int a) {
 	if (a==SIGINT) {
 		++cnt;
 		putchar('\07');
-		fflush(0);
+		fflush(stdout); // можно сделать через настройки терминала, но мне лень
 	}
 	if (a==SIGQUIT) {
 		printf("%d\n",cnt);
