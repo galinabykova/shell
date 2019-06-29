@@ -14,8 +14,15 @@ int main () {
 	s[cnt++]='\'';
 	s[cnt]='\0';
 	FILE *f=popen(s,"r");
+	if (!f) {
+		perror("Error\n");
+		return 0;
+	}
 	FILE *f1=popen("tr 'a-z' 'A-Z'","w");
-
+	if (!f1) {
+		perror("Error\n");
+		return 0;
+	}
 	while(fgets(line,BUFSIZ,f))
 		fputs(line, f1);
 
