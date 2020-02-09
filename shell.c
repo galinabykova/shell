@@ -92,6 +92,7 @@ void childDoIt (int i,int ncmds,int *newin,int *newout,int in,int out) {
 			printf("(\n");
 	}
 //	printf("я %d, ловит %d\n", getpid(),tcgetpgrp(0));//
+// Есть подозрение, что следующие два if можно выполнить при помощи chandeFile. И мне не очень нравится проверка в цикле для каждого, хотя выполняем только в начале и в конце
 	if (in!=STDIN_FILENO) {
 		close(STDIN_FILENO);
 		dup(in);
