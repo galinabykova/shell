@@ -45,6 +45,8 @@ void parentDoIt (int in,int out){
 		sigaction(SIGTTOU,&stp2,0);
 		if (tcsetpgrp(0,getpgid(0))<0)
 			printf("(\n");
+			
+		//Почему это здесь, а не до waitid? Ведь нужно закрывать дескриптор, чтобы был конец файла? 
 		if (si.si_code==CLD_EXITED) {
 			if (in!=STDIN_FILENO) {
 				close(in);
