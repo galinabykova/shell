@@ -33,6 +33,13 @@ void parentDoIt (int in,int out){
  	} else {
  	  	//а если  группа не успеет создаться?
 
+ 	  	if (in!=STDIN_FILENO) {
+			close(in);
+		}
+		if (out!=STDOUT_FILENO) {
+			close(out);
+		}
+
 		siginfo_t si;
 		waitid(P_PID,p,&si,WEXITED|WSTOPPED);
 
@@ -46,15 +53,6 @@ void parentDoIt (int in,int out){
 		if (tcsetpgrp(0,getpgid(0))<0)
 			printf("(\n");
 			
-		//Почему это здесь, а не до waitid? Ведь нужно закрывать дескриптор, чтобы был конец файла? 
-		if (si.si_code==CLD_EXITED) {
-			if (in!=STDIN_FILENO) {
-				close(in);
-			}
-			if (out!=STDOUT_FILENO) {
-				close(out);
-			}
-		}
 	//	printf("я %d, ловит %d\n", getpid(),tcgetpgrp(0));//
  	  	p=0;
 	//	printf("Do it\n");
