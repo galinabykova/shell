@@ -17,7 +17,7 @@
 char *infile, *outfile, *appfile;
 struct command cmds[MAXCMDS];
 char bkgrnd;
-struct sigaction stp,stp1,stp2;
+struct sigaction stp,stp1,stp2,stp3;
 int pid;
 int fd[2];
 
@@ -25,6 +25,7 @@ pid_t p=0,predP=0;
 void signalToParent (int sigName);
 void signalToChild (int a);
 void setSignalsToParent ();
+void toBkgrnd();
 void parentDoIt (int in,int out){
 	if (bkgrnd) {
 		//Есть подозрение, что если запустить очень много фоновых процессов, можно достигнуть максимума по количеству процессов. При этом эти процессы вполне себе могут завершиться, но будут занимать место в таблице процессоров.
@@ -43,20 +44,35 @@ void parentDoIt (int in,int out){
 		siginfo_t si;
 		waitid(P_PID,p,&si,WEXITED|WSTOPPED);
 
- 	  	if (si.si_code==CLD_STOPPED) {
-			kill(p,SIGCONT);
-		} 
-
 		stp2.sa_handler=SIG_IGN;
 		stp2.sa_flags=SA_ONESHOT;
 		sigaction(SIGTTOU,&stp2,0);
 		if (tcsetpgrp(0,getpgid(0))<0)
 			printf("(\n");
+
+		if (si.si_code==CLD_STOPPED) {
+			kill(p,SIGCONT);
+			printf("В фоновом режиме запущен процесс pid=%d\n",p);
+		} 
 			
 	//	printf("я %d, ловит %d\n", getpid(),tcgetpgrp(0));//
  	  	p=0;
 	//	printf("Do it\n");
  	}
+}
+void toBkgrnd (int a) {
+	fprintf(stderr,"lsaf/n");
+
+	stp.sa_handler=SIG_IGN;
+	sigaction(SIGINT,&stp,0);
+	sigaction(SIGQUIT,&stp,0);
+	sigaction(SIGHUP,&stp,0);
+
+	if (a==SIGCONT) {
+		stp3.sa_handler=SIG_DFL;
+		sigaction(SIGCONT,&stp3,0);
+		kill(0,SIGCONT);
+	}
 }
 void changeFile (char cond,int last, char*file, int flags, int *save) {
 	if (cond) { //нужно проверить, имеем ли мы право на ввод или вывод
@@ -84,12 +100,12 @@ void childDoIt (int i,int ncmds,int *newin,int *newout,int in,int out) {
 	stp2.sa_flags=SA_ONESHOT;
 	sigaction(SIGTTOU,&stp2,0);
 	if (bkgrnd) {
-		stp.sa_handler=SIG_IGN;
-		sigaction(SIGINT,&stp,0);
-		sigaction(SIGQUIT,&stp,0);
+		toBkgrnd(0);
 	} else {
 		stp.sa_handler=SIG_DFL;
 		sigaction(SIGINT,&stp,0);
+		stp3.sa_handler=toBkgrnd;
+		sigaction(SIGCONT,&stp3,0);
 		if (tcsetpgrp(0,getpgid(0))<0)
 			printf("(\n");
 	}
