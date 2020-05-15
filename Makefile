@@ -1,2 +1,2 @@
-shell: cmdInShell.c parseline.c promptline.c shell.c 
-	gcc job.c fon.c cmdInShell.c parseline.c promptline.c shell.c -o shell
+shell: shell.c parseline.c promptline.c jobs.c
+	gcc -g shell.c parseline.c promptline.c jobs.c -o shell -std=c11 -Wall -Wextra -Wpedantic -Wunused -Wconversion -D_POSIX_C_SOURCE=200112L
